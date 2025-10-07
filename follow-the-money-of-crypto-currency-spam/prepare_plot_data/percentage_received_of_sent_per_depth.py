@@ -1,0 +1,156 @@
+import os
+import pandas as pd
+import csv
+import mean_received_per_depth as received
+import mean_sent_per_depth as sent
+
+# Constants
+SATOSHI_PER_BTC = 100000000
+cwd = os.getcwd()
+
+def analyze_csv_files(parent_folder, sub):
+    """
+    @brief Analyze the CSV files in the specified parent folder and subfolders.
+    The function calculates the mean value sent in BTC for each depth and
+    writes the results to a CSV file in each subfolder directory.
+
+    When analyzing the CSV files, the function reads the 'Depth' and 'value_received' columns from each file.
+    It then calculates the mean value received in BTC for each depth and writes the results to a CSV file in each subfolder directory.
+    This will give an view of the mean value received in BTC for each depth, for each abuse type, for the path taken in the DFS traversal.
+
+    @param parent_folder The parent folder containing the subfolders with CSV files
+    @param sub The subfolder name to append to the output CSV file
+
+    @Note How to use: analyze_csv_files(parent_folder, sub). e.g. analyze_csv_files('data_dfs/4_5', '4_5')
+    """
+    #all_received = pd.DataFrame()
+    #all_sent = pd.DataFrame()
+    sent_string = "mean_value_sent_per_depth"
+    received_string = "mean_value_received_per_depth"
+    abuse_types = ['darknet', 'blackmail', 'ransomware', 'tumbler']
+
+    for type in abuse_types:
+        all_received = pd.DataFrame()
+        all_sent = pd.DataFrame()
+        subfolder_path = os.path.join(parent_folder, sent_string)
+        for files in os.listdir(subfolder_path):
+            if files.endswith(f'{type}_mean_value_sent_per_depth.csv'):
+                file_path = os.path.join(subfolder_path, files)
+                df = pd.read_csv(file_path)
+                all_sent = pd.concat([all_sent, df], ignore_index=True)
+        subfolder_path = os.path.join(parent_folder, received_string)
+        for files in os.listdir(subfolder_path):
+            if files.endswith(f'{type}_mean_value_received_per_depth.csv'):
+                file_path = os.path.join(subfolder_path, files)
+                df = pd.read_csv(file_path)
+                all_received = pd.concat([all_received, df], ignore_index=True)
+                #print(all_received)
+        new_df = pd.DataFrame()
+        new_df['Abuse_Type'] = all_received['Abuse_Type']
+        new_df['Depth'] = all_received['Depth']
+        new_df['Percentage_Received_to_Sent'] = round((all_received['Mean_Value_Received_BTC'] / all_sent['Mean_Value_Sent_BTC']) *100, 2) 
+        new_df = new_df.sort_values(by=['Abuse_Type', 'Depth', 'Percentage_Received_to_Sent'])
+        print(new_df)
+        output_folder = os.path.join(cwd, 'data_plot')
+        os.makedirs(output_folder, exist_ok=True)
+        output_directory = os.path.join(output_folder, sub, 'percentage_received_of_sent_per_depth')
+        os.makedirs(output_directory, exist_ok=True)
+        # Output the aggregated data to a CSV file in the subfolder directory
+        output_path_csv = os.path.join(output_directory, f'{type}_percentage_received_of_sent_per_depth.csv')
+        new_df.to_csv(output_path_csv, index=False)
+    """"
+    for subfolder in os.listdir(parent_folder):
+        subfolder_path = os.path.join(parent_folder, subfolder)
+        if os.path.isdir(subfolder_path):
+            # Initialize a DataFrame to collect data from all files in the subfolder
+            dfs_list = []
+
+            # Process each file in the subfolder
+            for file_name in os.listdir(subfolder_path):
+                
+                if file_name.endswith('.csv') and file_name != 'summed_results.csv':
+                    file_path = os.path.join(subfolder_path, file_name)
+                    df = pd.read_csv(file_path)
+                all_received = pd.DataFrame()
+                all_sent = pd.DataFrame()
+                sent.analyze_csv_files(parent_folder, sub)
+                subfolder_path = os.path.join("data_plot", sub, "mean_value_sent_per_depth")
+                for file_name in os.listdir(subfolder_path):
+                    if file_name.endswith('.csv'):
+                        file_path = os.path.join(subfolder_path, file_name)
+                        df = pd.read_csv(file_path)
+                        all_sent = pd.concat([all_sent, df], ignore_index=True)
+                        #print(df)
+                #print("END")
+                #print(all_sent)
+                #print("subfolder_path: ", subfolder_path)
+                received.analyze_csv_files(parent_folder, sub)
+                subfolder_path = os.path.join("data_plot", sub, "mean_value_received_per_depth")
+                for file_name in os.listdir(subfolder_path):
+                    if file_name.endswith('.csv'):
+                        file_path = os.path.join(subfolder_path, file_name)
+                        df = pd.read_csv(file_path)
+                        all_received = pd.concat([all_received, df], ignore_index=True)
+                #print(all_received)
+                # Divide the values "Mean_Value_Received_BTC" by the values "Mean_Value_Sent_BTC"
+                new_df = pd.DataFrame()
+                new_df['Abuse_Type'] = all_received['Abuse_Type']
+                new_df['Depth'] = all_received['Depth']
+                new_df['Percentage_Received_to_Sent'] = round((all_received['Mean_Value_Received_BTC'] / all_sent['Mean_Value_Sent_BTC']) *100, 2) 
+                new_df = new_df.sort_values(by=['Abuse_Type', 'Depth', 'Percentage_Received_to_Sent'])
+                print(new_df)
+                output_folder = os.path.join(cwd, 'data_plot')
+                os.makedirs(output_folder, exist_ok=True)
+                output_directory = os.path.join(output_folder, sub, 'percentage_received_of_sent_per_depth')
+                os.makedirs(output_directory, exist_ok=True)
+                # Output the aggregated data to a CSV file in the subfolder directory
+                output_path_csv = os.path.join(output_directory, f'percentage_received_of_sent_per_depth.csv')
+                new_df.to_csv(output_path_csv, index=False)
+"""
+""""
+    # Traverse each subfolder within the parent directory
+    for subfolder in os.listdir(parent_folder):
+        subfolder_path = os.path.join(parent_folder, subfolder)
+        if os.path.isdir(subfolder_path):
+            # Initialize a DataFrame to collect data from all files in the subfolder
+            all_depths = pd.DataFrame()
+            
+            # Process each file in the subfolder
+            for file_name in os.listdir(subfolder_path):
+
+                if file_name.endswith('.csv') and file_name != 'summed_results.csv':
+                    file_path = os.path.join(subfolder_path, file_name)
+                    df = pd.read_csv(file_path)
+                    df = df.dropna(subset=['Total_Value_Sent'])
+                    df = df.dropna(subset=['Tx_ID']) # Drop rows with NaN values in 'Tx_ID'
+                    # Ensure necessary columns are present
+                    if 'Depth' in df.columns and 'value_received' in df.columns:
+                        # Filter data and convert 'value_received' to BTC
+                        df['Mean_Value_Received_BTC'] = df['value_received'] / SATOSHI_PER_BTC
+                        df = df[['Depth', 'Mean_Value_Received_BTC']]
+                        all_depths = pd.concat([all_depths, df], ignore_index=True)
+            
+            # Group by 'Depth' and calculate the mean value received in BTC
+            if not all_depths.empty:
+                grouped = all_depths.groupby('Depth').mean().reset_index()
+                grouped['Abuse_Type'] = subfolder  # Add subfolder name to the results
+                grouped = grouped[['Abuse_Type', 'Depth', 'Mean_Value_Received_BTC']]  # Reorder columns
+                output_folder = os.path.join(cwd, 'data_plot')
+                os.makedirs(output_folder, exist_ok=True)
+                output_directory = os.path.join(output_folder, sub, 'percentage_received_of_sent_per_depth')
+                os.makedirs(output_directory, exist_ok=True)
+                # Output the aggregated data to a CSV file in the subfolder directory
+                output_path_csv = os.path.join(output_directory, f'{subfolder}_percentage_received_of_sent_per_depth.csv')
+                grouped.to_csv(output_path_csv, index=False)
+"""
+# Analyze the CSV files in the '4_5' subfolder
+parent_folder = os.path.join(cwd, 'data_plot', '4_5')
+#sent.analyze_csv_files(parent_folder, '4_5')
+#received.analyze_csv_files(parent_folder, '4_5')
+analyze_csv_files(parent_folder, '4_5')
+
+# Analyze the CSV files in the '2_10' subfolder
+parent_folder = os.path.join(cwd, 'data_plot', '2_10')
+#sent.analyze_csv_files(parent_folder, '2_10')
+#received.analyze_csv_files(parent_folder, '2_10')
+analyze_csv_files(parent_folder, '2_10')

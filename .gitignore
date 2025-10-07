@@ -1,0 +1,23 @@
+# ignore folders
+data/
+data_json/
+data_csv/
+data_dfs/
+.vscode/
+overviews/
+testData/
+data_plot/
+follow-the-money-of-crypto-currency-spam/visualize_plot_data/output_images/
+# ignore files
+*.pyc
+*.json
+*.7z
+*.csv
+
+# exception, don't ignore this files
+#!data3.csv
+
+# exception, don't ignore this folders
+#!testData/
+
+
